@@ -1,4 +1,4 @@
-# ExtraTextAreas for MODX 3.1
+# ExtraTextAreas for MODX 3.1+
 
 Компонент добавляет дополнительные текстовые области на вкладку редактирования ресурса и хранит значения в отдельных таблицах.
 
@@ -8,21 +8,50 @@
 - Автоматическая подгрузка активных полей на вкладку контента ресурса.
 - Сохранение контента и выбранного редактора для каждого дополнительного поля.
 - Авто-обнаружение доступных редакторов по активным плагинам системы (Ace/CKEditor/Tiny и т.п.).
-- Упаковка в transport package для установки через «Установщик».
+- Установка через стандартный MODX **Установщик** (`*.transport.zip`).
 
 ## Структура хранения
 
 - `modx_extratextareas_fields` — описание полей (имя, подпись, сортировка, активность).
-- `modx_extratextareas_values` — контент полей по ресурсам (`resource_id + field_id`).
+- `modx_extratextareas_values` — значения полей по ресурсам (`resource_id + field_id`) и выбранный редактор.
 
-## Установка
+## Важно про установку
 
-1. Выполнить `_build/build.transport.php` в среде MODX, где доступен класс `modX`.
-2. Полученный transport package установить через **Установщик**.
-3. В меню компонентов открыть **ExtraTextAreas** и создать поля.
+Установщик MODX не ставит «сырой» git-репозиторий. Нужен собранный архив вида:
 
-## Дальнейшие улучшения
+- `extratextareas-<version>-<release>.transport.zip`
 
-- Привязка конкретного visual editor API к textarea (через события редакторов).
-- Локализация caption/description через JSON для мультиязычных сайтов.
-- Вывод значений в шаблонах через сниппет/TV-bridge.
+## Сборка transport package
+
+### 1) Репозиторий в корне MODX
+
+```bash
+php _build/build.transport.php
+```
+
+### 2) Репозиторий в отдельной папке
+
+```bash
+MODX_BASE_PATH=/path/to/modx php _build/build.transport.php
+```
+
+Скрипт проверяет наличие `config.core.php` и валидирует необходимые файлы перед упаковкой.
+
+## Установка в менеджере MODX
+
+1. Соберите пакет командой выше.
+2. Найдите `*.transport.zip` в директории пакетов MODX.
+3. Загрузите архив через **Менеджер → Установщик**.
+4. Перейдите в **Компоненты → ExtraTextAreas**.
+
+## Что устанавливается пакетом
+
+- Namespace `extratextareas`.
+- CMP (меню и action `home`).
+- Плагин `ExtraTextAreas` (`OnDocFormRender`, `OnDocFormSave`).
+- Файлы из `core/components/extratextareas/` и `assets/components/extratextareas/`.
+- Таблицы `extratextareas_fields` и `extratextareas_values` (через resolver).
+
+## Ограничение текущей версии
+
+Выбор редактора для каждого поля сохраняется в БД. Для жёсткой привязки конкретного editor API к каждому textarea может потребоваться дополнительная интеграция с конкретными редакторными дополнениями.
