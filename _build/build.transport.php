@@ -21,7 +21,11 @@ foreach ([$coreSource, $assetsSource, $pluginFile, $readmeFile, $resolverFile] a
     }
 }
 
-$builder = new modPackageBuilder($modx);
+$builderClass = class_exists('MODX\\Revolution\\Transport\\modPackageBuilder')
+    ? 'MODX\\Revolution\\Transport\\modPackageBuilder'
+    : 'modPackageBuilder';
+
+$builder = new $builderClass($modx);
 $builder->createPackage($packageName, $packageVersion, $packageRelease);
 $builder->registerNamespace($packageName, false, true, '{core_path}components/' . $packageName . '/');
 $builder->setPackageAttributes([
