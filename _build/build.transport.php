@@ -63,7 +63,8 @@ foreach (['OnDocFormRender', 'OnDocFormSave'] as $eventName) {
     $events[] = $event;
 }
 $plugin->addMany($events, 'PluginEvents');
-$category->addMany([$plugin], 'Plugins');
+$plugins = [$plugin];
+$category->addMany($plugins, 'Plugins');
 
 $action = $modx->newObject('modAction');
 $action->fromArray([
