@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model package="extratextareas" baseClass="xPDO\\Om\\xPDOObject" platform="mysql" defaultEngine="InnoDB" phpdoc-package="extratextareas" phpdoc-subpackage="model">
+    <object class="ExtraTextAreasField" table="extratextareas_fields" extends="xPDO\\Om\\xPDOSimpleObject">
+        <field key="name" dbtype="varchar" precision="191" phptype="string" null="false" default=""/>
+        <field key="caption" dbtype="varchar" precision="255" phptype="string" null="false" default=""/>
+        <field key="description" dbtype="text" phptype="string" null="true"/>
+        <field key="active" dbtype="tinyint" precision="1" phptype="boolean" null="false" default="1"/>
+        <field key="rank" dbtype="int" precision="10" phptype="integer" null="false" default="0"/>
+
+        <index alias="name" name="name" primary="false" unique="true" type="BTREE">
+            <column key="name" length="" collation="A" null="false"/>
+        </index>
+
+        <aggregate alias="Values" class="ExtraTextAreasValue" local="id" foreign="field_id" cardinality="many" owner="local"/>
+    </object>
+
+    <object class="ExtraTextAreasValue" table="extratextareas_values" extends="xPDO\\Om\\xPDOSimpleObject">
+        <field key="resource_id" dbtype="int" precision="10" phptype="integer" null="false" default="0"/>
+        <field key="field_id" dbtype="int" precision="10" phptype="integer" null="false" default="0"/>
+        <field key="content" dbtype="mediumtext" phptype="string" null="true"/>
+        <field key="editor" dbtype="varchar" precision="190" phptype="string" null="false" default=""/>
+        <field key="editedon" dbtype="datetime" phptype="datetime" null="true"/>
+        <field key="editedby" dbtype="int" precision="10" phptype="integer" null="false" default="0"/>
+
+        <index alias="resource_field" name="resource_field" primary="false" unique="true" type="BTREE">
+            <column key="resource_id" length="" collation="A" null="false"/>
+            <column key="field_id" length="" collation="A" null="false"/>
+        </index>
+
+        <composite alias="Field" class="ExtraTextAreasField" local="field_id" foreign="id" cardinality="one" owner="foreign"/>
+    </object>
+</model>
