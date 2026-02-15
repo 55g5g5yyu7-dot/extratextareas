@@ -5,16 +5,29 @@ use xPDO\Transport\xPDOTransport;
 require_once __DIR__ . '/build.config.php';
 
 $packageName = 'extratextareas';
-$packageVersion = '1.0.1';
+$packageVersion = '1.0.2';
 $packageRelease = 'pl';
+
+$coreSource = dirname(__DIR__) . '/core/components/extratextareas';
+$assetsSource = dirname(__DIR__) . '/assets/components/extratextareas';
+$pluginFile = $coreSource . '/elements/plugins/extratextareas.plugin.php';
+$readmeFile = dirname(__DIR__) . '/README.md';
+$resolverFile = __DIR__ . '/resolvers/resolve.tables.php';
+
+foreach ([$coreSource, $assetsSource, $pluginFile, $readmeFile, $resolverFile] as $path) {
+    if (!file_exists($path)) {
+        fwrite(STDERR, "[extratextareas] Build failed: path not found: {$path}\n");
+        exit(1);
+    }
+}
 
 $builder = new modPackageBuilder($modx);
 $builder->createPackage($packageName, $packageVersion, $packageRelease);
 $builder->registerNamespace($packageName, false, true, '{core_path}components/' . $packageName . '/');
 $builder->setPackageAttributes([
     'license' => 'GPLv2+',
-    'readme' => file_get_contents(dirname(__DIR__) . '/README.md'),
-    'changelog' => "1.0.1-pl\n- Improved build bootstrap and installer readiness.\n",
+    'readme' => file_get_contents($readmeFile),
+    'changelog' => "1.0.2-pl\n- Build script hardening and clearer installer workflow.\n",
 ]);
 
 $namespace = $modx->newObject('modNamespace');
@@ -31,7 +44,7 @@ $plugin = $modx->newObject('modPlugin');
 $plugin->fromArray([
     'name' => 'ExtraTextAreas',
     'description' => 'Injects and persists extra text areas in resource form.',
-    'plugincode' => file_get_contents(dirname(__DIR__) . '/core/components/extratextareas/elements/plugins/extratextareas.plugin.php'),
+    'plugincode' => file_get_contents($pluginFile),
     'disabled' => 0,
 ], '', true, true);
 
@@ -95,16 +108,14 @@ $categoryVehicle = $builder->createVehicle($category, [
 ]);
 
 $categoryVehicle->resolve('file', [
-    'source' => dirname(__DIR__) . '/core/components/extratextareas',
+    'source' => $coreSource,
     'target' => "return MODX_CORE_PATH . 'components/';",
 ]);
 $categoryVehicle->resolve('file', [
-    'source' => dirname(__DIR__) . '/assets/components/extratextareas',
+    'source' => $assetsSource,
     'target' => "return MODX_ASSETS_PATH . 'components/';",
 ]);
-$categoryVehicle->resolve('php', [
-    'source' => dirname(__DIR__) . '/_build/resolvers/resolve.tables.php',
-]);
+$categoryVehicle->resolve('php', ['source' => $resolverFile]);
 $builder->putVehicle($categoryVehicle);
 
 $actionVehicle = $builder->createVehicle($action, [
@@ -122,7 +133,7 @@ $menuVehicle = $builder->createVehicle($menu, [
 $builder->putVehicle($menuVehicle);
 
 if (!$builder->pack()) {
-    fwrite(STDERR, "[extratextareas] Build failed.\n");
+    fwrite(STDERR, "[extratextareas] Build failed at pack() stage.\n");
     exit(1);
 }
 
