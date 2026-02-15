@@ -10,10 +10,19 @@
 - Авто-обнаружение доступных редакторов по активным плагинам системы (Ace/CKEditor/Tiny и т.п.).
 - Установка через стандартный MODX **Установщик** (`*.transport.zip`).
 
-## Структура хранения
+## Для случая «без SSH»
 
-- `modx_extratextareas_fields` — описание полей (имя, подпись, сортировка, активность).
-- `modx_extratextareas_values` — значения полей по ресурсам (`resource_id + field_id`) и выбранный редактор.
+Теперь в репозитории есть CI-процесс, который сам собирает transport package:
+
+- workflow: `.github/workflows/build-transport.yml`
+- скрипт сборки: `scripts/build_transport_ci.sh`
+- готовый архив сохраняется в `dist/` и коммитится в репозиторий (если изменился)
+
+Это значит:
+1. Нажимаете **Actions → Build MODX transport package → Run workflow**.
+2. После выполнения в репозитории появится/обновится `dist/extratextareas-latest.transport.zip`.
+3. Скачиваете ZIP репозитория с GitHub — внутри уже будет установочный пакет из `dist/`.
+4. Загружаете `dist/extratextareas-latest.transport.zip` в MODX Installer.
 
 ## Важно про установку
 
@@ -21,7 +30,7 @@
 
 - `extratextareas-<version>-<release>.transport.zip`
 
-## Сборка transport package
+## Локальная сборка (если когда-нибудь появится доступ к CLI)
 
 ### 1) Репозиторий в корне MODX
 
@@ -36,13 +45,6 @@ MODX_BASE_PATH=/path/to/modx php _build/build.transport.php
 ```
 
 Скрипт проверяет наличие `config.core.php` и валидирует необходимые файлы перед упаковкой.
-
-## Установка в менеджере MODX
-
-1. Соберите пакет командой выше.
-2. Найдите `*.transport.zip` в директории пакетов MODX.
-3. Загрузите архив через **Менеджер → Установщик**.
-4. Перейдите в **Компоненты → ExtraTextAreas**.
 
 ## Что устанавливается пакетом
 
