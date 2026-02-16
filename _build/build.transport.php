@@ -33,6 +33,10 @@ function writeBuildError(string $message): void
 
 function buildFail(string $message): void
 {
+    if (getenv('EXTRATEXTAREAS_BUILD_EMBEDDED') === '1') {
+        throw new RuntimeException($message);
+    }
+
     writeBuildError($message . "\n");
     exit(1);
 }
@@ -101,14 +105,6 @@ $plugin->addMany($events, 'PluginEvents');
 $plugins = [$plugin];
 $category->addMany($plugins, 'Plugins');
 
-$action = createObjectOrFail($modx, ['modAction', 'MODX\\Revolution\\modAction'], 'action');
-$action->fromArray([
-    'namespace' => $packageName,
-    'controller' => 'home',
-    'haslayout' => 1,
-    'lang_topics' => 'extratextareas:default',
-], '', true, true);
-
 $menu = createObjectOrFail($modx, ['modMenu', 'MODX\\Revolution\\modMenu'], 'menu');
 $menu->fromArray([
     'text' => 'extratextareas',
@@ -157,13 +153,6 @@ $categoryVehicle->resolve('file', [
 ]);
 $categoryVehicle->resolve('php', ['source' => $resolverFile]);
 $builder->putVehicle($categoryVehicle);
-
-$actionVehicle = $builder->createVehicle($action, [
-    xPDOTransport::UNIQUE_KEY => ['namespace', 'controller'],
-    xPDOTransport::PRESERVE_KEYS => false,
-    xPDOTransport::UPDATE_OBJECT => true,
-]);
-$builder->putVehicle($actionVehicle);
 
 $menuVehicle = $builder->createVehicle($menu, [
     xPDOTransport::UNIQUE_KEY => ['text', 'parent', 'namespace'],

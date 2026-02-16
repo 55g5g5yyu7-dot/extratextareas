@@ -65,6 +65,8 @@ if (!is_file($configCore)) {
 
 putenv('MODX_BASE_PATH=' . $basePath);
 $_ENV['MODX_BASE_PATH'] = $basePath;
+putenv('EXTRATEXTAREAS_BUILD_EMBEDDED=1');
+$_ENV['EXTRATEXTAREAS_BUILD_EMBEDDED'] = '1';
 
 ob_start();
 try {
