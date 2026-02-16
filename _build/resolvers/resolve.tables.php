@@ -37,7 +37,8 @@ $queries = [
 ];
 
 foreach ($queries as $sql) {
-    if (!$modx->exec($sql)) {
+    $result = $modx->exec($sql);
+    if ($result === false) {
         $error = $modx->errorInfo();
         $modx->log(modX::LOG_LEVEL_ERROR, '[extratextareas] Resolver SQL failed: ' . $sql . ' ERROR: ' . print_r($error, true));
         return false;
