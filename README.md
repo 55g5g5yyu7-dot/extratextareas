@@ -10,19 +10,25 @@
 - Авто-обнаружение доступных редакторов по активным плагинам системы (Ace/CKEditor/Tiny и т.п.).
 - Установка через стандартный MODX **Установщик** (`*.transport.zip`).
 
-## Для случая «без SSH»
+## Ручная сборка без подключения к установленному MODX
 
-Теперь в репозитории есть CI-процесс, который сам собирает transport package:
+Добавлен скрипт `php _build/build.manual.php`, который поднимает временное окружение MODX и собирает transport-пакет без использования вашего рабочего сайта MODX.
 
-- workflow: `.github/workflows/build-transport.yml`
-- скрипт сборки: `scripts/build_transport_ci.sh`
-- готовый архив сохраняется в `dist/` и коммитится в репозиторий (если изменился)
+Требования:
+- `php`
+- `composer`
+- `mysql` CLI
+- доступный MySQL-сервер
 
-Это значит:
-1. Нажимаете **Actions → Build MODX transport package → Run workflow**.
-2. После выполнения в репозитории появится/обновится `dist/extratextareas-latest.transport.zip`.
-3. Скачиваете ZIP репозитория с GitHub — внутри уже будет установочный пакет из `dist/`.
-4. Загружаете `dist/extratextareas-latest.transport.zip` в MODX Installer.
+Пример запуска:
+
+```bash
+MYSQL_HOST=127.0.0.1 MYSQL_USER=modx MYSQL_PASSWORD=modx MYSQL_DATABASE=modx php _build/build.manual.php
+```
+
+Результат:
+- собранный пакет попадёт в `dist/`
+- также обновится `dist/extratextareas-latest.transport.zip`
 
 ## Важно про установку
 
@@ -45,6 +51,21 @@ MODX_BASE_PATH=/path/to/modx php _build/build.transport.php
 ```
 
 Скрипт проверяет наличие `config.core.php` и валидирует необходимые файлы перед упаковкой.
+
+
+## Локальная сборка через браузер (без SSH/CLI)
+
+Если у вас только FTP/файловый доступ, можно запускать сборку через веб-скрипт:
+
+1. Распакуйте репозиторий в файловую систему сервера.
+2. Откройте в браузере: `https://ваш-сайт/_build/build.web.php`
+   - (совместимость) также можно открыть: `https://ваш-сайт/_build/build_web.php`
+3. Если MODX расположен в другой директории, передайте параметр:
+   - `https://ваш-сайт/_build/build.web.php?modx_base_path=/полный/путь/к/modx/`
+4. Скрипт запустит `build.transport.php` отдельным PHP-процессом и покажет логи на странице.
+5. Готовый пакет ищите в `core/packages/` вашего MODX.
+
+> ⚠️ Рекомендация по безопасности: после сборки удалите `/_build/build.web.php` с сервера или ограничьте доступ к нему (например, по IP/basic-auth), чтобы никто посторонний не запускал сборку.
 
 ## Что устанавливается пакетом
 
