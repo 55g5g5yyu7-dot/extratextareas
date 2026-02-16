@@ -42,13 +42,24 @@ function renderHeader(): void
     echo "<!doctype html>\n";
     echo "<html lang=\"ru\">\n";
     echo "<head><meta charset=\"utf-8\"><title>ExtraTextAreas: локальная сборка</title>\n";
-    echo "<style>body{font-family:Arial,sans-serif;padding:20px;background:#f5f5f5;color:#222}section{background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;margin:12px 0}h1{margin-top:0}.ok{color:#0a7d22}.err{color:#b00020}.warn{color:#9a6700}code,pre{background:#fafafa;border:1px solid #eee;border-radius:6px;padding:8px;display:block;overflow:auto}</style></head><body>\n";
+    echo "<style>body{font-family:Arial,sans-serif;padding:20px;background:#f5f5f5;color:#222}section{background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;margin:12px 0}h1{margin-top:0}.ok{color:#0a7d22}.err{color:#b00020}.warn{color:#9a6700}code,pre,textarea{background:#fafafa;border:1px solid #eee;border-radius:6px;padding:8px;display:block;overflow:auto}</style></head><body>\n";
     echo "<h1>🔨 Сборка transport-пакета ExtraTextAreas</h1>\n";
 }
 
 function renderFooter(): void
 {
     echo "</body></html>";
+}
+
+function renderReport(array $reportLines, string $logs): void
+{
+    $report = implode("\n", $reportLines) . "\n\nLogs:\n" . $logs;
+
+    echo '<section>';
+    echo '<strong>Отчёт для пересылки</strong>';
+    echo '<p>Скопируйте блок ниже целиком и отправьте разработчику:</p>';
+    echo '<textarea readonly style="width:100%;min-height:280px;font-family:monospace">' . h($report) . '</textarea>';
+    echo '</section>';
 }
 
 renderHeader();
@@ -60,16 +71,24 @@ echo 'SAPI: <code>' . h(PHP_SAPI) . '</code><br>';
 echo 'Путь к скрипту: <code>' . h(__FILE__) . '</code></p>';
 echo '</section>';
 
-if (!is_file($transportScript)) {
-    echo '<section><p class="err">❌ Не найден файл сборки: <code>' . h($transportScript) . '</code></p></section>';
-    renderFooter();
-    exit(1);
-}
-
 $inputBasePath = isset($_REQUEST['modx_base_path']) ? trim((string) $_REQUEST['modx_base_path']) : '';
 $basePathMeta = detectModxBasePath($rootDir, $inputBasePath);
 $basePath = $basePathMeta['path'];
 $configCorePath = $basePath . 'config.core.php';
+
+$reportLines = [
+    'ExtraTextAreas build report',
+    'PHP: ' . PHP_VERSION,
+    'SAPI: ' . PHP_SAPI,
+    'Script: ' . __FILE__,
+    'MODX base path: ' . $basePath,
+    'Path source: ' . $basePathMeta['source'],
+    'config.core.php: ' . $configCorePath,
+    'Mode: direct include (pure PHP, no exec)',
+];
+
+$logs = '';
+$exitCode = 1;
 
 echo '<section>';
 echo '<strong>Параметры</strong>';
@@ -78,20 +97,28 @@ echo '<p>Источник пути: <code>' . h($basePathMeta['source']) . '</co
 echo '<p>config.core.php: <code>' . h($configCorePath) . '</code></p>';
 echo '</section>';
 
+if (!is_file($transportScript)) {
+    $logs = 'build.transport.php not found: ' . $transportScript;
+    echo '<section><p class="err">❌ Не найден файл сборки: <code>' . h($transportScript) . '</code></p></section>';
+    $reportLines[] = 'Exit code: 1';
+    renderReport($reportLines, $logs);
+    renderFooter();
+    exit(1);
+}
+
 if (!is_file($configCorePath)) {
+    $logs = 'config.core.php not found in selected MODX base path';
     echo '<section>';
     echo '<p class="err">❌ Не найден <code>config.core.php</code> в указанном MODX пути.</p>';
     echo '<p>Передайте путь параметром <code>?modx_base_path=/полный/путь/к/modx/</code>.</p>';
     echo '</section>';
+    $reportLines[] = 'Exit code: 1';
+    renderReport($reportLines, $logs);
     renderFooter();
     exit(1);
 }
 
 echo '<section><strong>Режим запуска</strong><p><code>direct include (pure PHP, no exec)</code></p></section>';
-
-$logs = '';
-$exitCode = 0;
-
 echo '<section><strong>Выполнение</strong><p>Запуск <code>build.transport.php</code> в текущем PHP процессе.</p></section>';
 
 try {
@@ -132,5 +159,8 @@ if ($packageFiles !== []) {
 } else {
     echo '<section><p class="warn">⚠️ Пакет не найден в <code>' . h($basePath . 'core/packages/') . '</code>.</p></section>';
 }
+
+$reportLines[] = 'Exit code: ' . (string) $exitCode;
+renderReport($reportLines, $logs);
 
 renderFooter();

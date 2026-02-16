@@ -14,10 +14,45 @@ $pluginFile = $coreSource . '/elements/plugins/extratextareas.plugin.php';
 $readmeFile = dirname(__DIR__) . '/README.md';
 $resolverFile = __DIR__ . '/resolvers/resolve.tables.php';
 
+function writeBuildError(string $message): void
+{
+    if (defined('STDERR')) {
+        fwrite(STDERR, $message);
+        return;
+    }
+
+    $stderr = @fopen('php://stderr', 'wb');
+    if (is_resource($stderr)) {
+        fwrite($stderr, $message);
+        fclose($stderr);
+        return;
+    }
+
+    echo $message;
+}
+
+function buildFail(string $message): void
+{
+    writeBuildError($message . "\n");
+    exit(1);
+}
+
+function createObjectOrFail($modx, array $classes, string $label)
+{
+    foreach ($classes as $class) {
+        $object = $modx->newObject($class);
+        if ($object) {
+            return $object;
+        }
+    }
+
+    $supported = implode(', ', $classes);
+    buildFail("[extratextareas] Build failed: unable to create {$label}. Tried: {$supported}");
+}
+
 foreach ([$coreSource, $assetsSource, $pluginFile, $readmeFile, $resolverFile] as $path) {
     if (!file_exists($path)) {
-        fwrite(STDERR, "[extratextareas] Build failed: path not found: {$path}\n");
-        exit(1);
+        buildFail("[extratextareas] Build failed: path not found: {$path}");
     }
 }
 
@@ -34,17 +69,17 @@ $builder->setPackageAttributes([
     'changelog' => "1.0.2-pl\n- Build script hardening and clearer installer workflow.\n",
 ]);
 
-$namespace = $modx->newObject('modNamespace');
+$namespace = createObjectOrFail($modx, ['modNamespace', 'MODX\\Revolution\\modNamespace'], 'namespace');
 $namespace->fromArray([
     'name' => $packageName,
     'path' => '{core_path}components/' . $packageName . '/',
     'assets_path' => '{assets_path}components/' . $packageName . '/',
 ], '', true, true);
 
-$category = $modx->newObject('modCategory');
+$category = createObjectOrFail($modx, ['modCategory', 'MODX\\Revolution\\modCategory'], 'category');
 $category->fromArray(['category' => 'ExtraTextAreas'], '', true, true);
 
-$plugin = $modx->newObject('modPlugin');
+$plugin = createObjectOrFail($modx, ['modPlugin', 'MODX\\Revolution\\modPlugin'], 'plugin');
 $plugin->fromArray([
     'name' => 'ExtraTextAreas',
     'description' => 'Injects and persists extra text areas in resource form.',
@@ -54,7 +89,7 @@ $plugin->fromArray([
 
 $events = [];
 foreach (['OnDocFormRender', 'OnDocFormSave'] as $eventName) {
-    $event = $modx->newObject('modPluginEvent');
+    $event = createObjectOrFail($modx, ['modPluginEvent', 'MODX\\Revolution\\modPluginEvent'], 'plugin event ' . $eventName);
     $event->fromArray([
         'event' => $eventName,
         'priority' => 0,
@@ -66,7 +101,7 @@ $plugin->addMany($events, 'PluginEvents');
 $plugins = [$plugin];
 $category->addMany($plugins, 'Plugins');
 
-$action = $modx->newObject('modAction');
+$action = createObjectOrFail($modx, ['modAction', 'MODX\\Revolution\\modAction'], 'action');
 $action->fromArray([
     'namespace' => $packageName,
     'controller' => 'home',
@@ -74,7 +109,7 @@ $action->fromArray([
     'lang_topics' => 'extratextareas:default',
 ], '', true, true);
 
-$menu = $modx->newObject('modMenu');
+$menu = createObjectOrFail($modx, ['modMenu', 'MODX\\Revolution\\modMenu'], 'menu');
 $menu->fromArray([
     'text' => 'extratextareas',
     'description' => 'extratextareas.menu_desc',
@@ -138,8 +173,7 @@ $menuVehicle = $builder->createVehicle($menu, [
 $builder->putVehicle($menuVehicle);
 
 if (!$builder->pack()) {
-    fwrite(STDERR, "[extratextareas] Build failed at pack() stage.\n");
-    exit(1);
+    buildFail('[extratextareas] Build failed at pack() stage.');
 }
 
 echo "[extratextareas] Package created: {$packageName}-{$packageVersion}-{$packageRelease}.transport.zip\n";
