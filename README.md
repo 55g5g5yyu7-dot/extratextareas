@@ -10,25 +10,27 @@
 - Авто-обнаружение доступных редакторов по активным плагинам системы (Ace/CKEditor/Tiny и т.п.).
 - Установка через стандартный MODX **Установщик** (`*.transport.zip`).
 
-## Ручная сборка без подключения к установленному MODX
+## Ручная сборка стандартными средствами PHP (без SSH/exec/composer)
 
-Добавлен скрипт `php _build/build.manual.php`, который поднимает временное окружение MODX и собирает transport-пакет без использования вашего рабочего сайта MODX.
+Добавлен скрипт `php _build/build.manual.php`, который запускает `build.transport.php` **в текущем PHP-процессе**.
 
-Требования:
-- `php`
-- `composer`
-- `mysql` CLI
-- доступный MySQL-сервер
+Что нужно:
+- рабочий установленный MODX (чтобы существовал `config.core.php`)
+- сам репозиторий компонента
+
+Скрипт сам пытается найти MODX:
+- сначала в корне репозитория,
+- затем в родительской папке (типичный случай `/public_html/extratextareas-main`),
+- либо можно явно указать путь через `MODX_BASE_PATH`.
 
 Пример запуска:
 
 ```bash
-MYSQL_HOST=127.0.0.1 MYSQL_USER=modx MYSQL_PASSWORD=modx MYSQL_DATABASE=modx php _build/build.manual.php
+MODX_BASE_PATH=/полный/путь/к/modx php _build/build.manual.php
 ```
 
 Результат:
-- собранный пакет попадёт в `dist/`
-- также обновится `dist/extratextareas-latest.transport.zip`
+- пакет создаётся в `core/packages/` вашего MODX.
 
 ## Важно про установку
 
@@ -63,7 +65,7 @@ MODX_BASE_PATH=/path/to/modx php _build/build.transport.php
 3. Скрипт автоматически пытается найти `config.core.php` в корне репозитория и в родительской папке (удобно для структуры вида `/public_html/extratextareas-main`).
 4. Если MODX расположен в другой директории, передайте параметр:
    - `https://ваш-сайт/_build/build.web.php?modx_base_path=/полный/путь/к/modx/`
-5. Скрипт сначала пробует запуск через `proc_open`, а если функция недоступна — использует fallback через прямой include `build.transport.php`.
+5. Скрипт запускает `build.transport.php` напрямую в текущем PHP-процессе (без `proc_open`/`exec`).
 6. Готовый пакет ищите в `core/packages/` вашего MODX.
 
 > ⚠️ Рекомендация по безопасности: после сборки удалите `/_build/build.web.php` с сервера или ограничьте доступ к нему (например, по IP/basic-auth), чтобы никто посторонний не запускал сборку.

@@ -16,22 +16,6 @@ function h(string $value): string
     return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-function disabledFunctions(): array
-{
-    $disabled = (string) ini_get('disable_functions');
-    if ($disabled === '') {
-        return [];
-    }
-
-    $items = array_map('trim', explode(',', $disabled));
-    return array_values(array_filter($items, static fn(string $name): bool => $name !== ''));
-}
-
-function isFunctionAvailable(string $function): bool
-{
-    return function_exists($function) && !in_array($function, disabledFunctions(), true);
-}
-
 function detectModxBasePath(string $rootDir, string $requested): array
 {
     $candidates = [];
@@ -103,62 +87,27 @@ if (!is_file($configCorePath)) {
     exit(1);
 }
 
-$mode = isFunctionAvailable('proc_open') ? 'proc_open' : 'direct include fallback';
-echo '<section><strong>Режим запуска</strong><p><code>' . h($mode) . '</code></p></section>';
+echo '<section><strong>Режим запуска</strong><p><code>direct include (pure PHP, no exec)</code></p></section>';
 
 $logs = '';
 $exitCode = 0;
 
-if ($mode === 'proc_open') {
-    $command = sprintf(
-        'MODX_BASE_PATH=%s %s %s 2>&1',
-        escapeshellarg($basePath),
-        escapeshellarg(PHP_BINARY),
-        escapeshellarg($transportScript)
-    );
+echo '<section><strong>Выполнение</strong><p>Запуск <code>build.transport.php</code> в текущем PHP процессе.</p></section>';
 
-    echo '<section>';
-    echo '<strong>Выполнение</strong>';
-    echo '<p>Команда:</p><pre>' . h($command) . '</pre>';
-    echo '</section>';
+try {
+    putenv('MODX_BASE_PATH=' . $basePath);
+    $_ENV['MODX_BASE_PATH'] = $basePath;
 
-    $descriptor = [
-        0 => ['pipe', 'r'],
-        1 => ['pipe', 'w'],
-        2 => ['pipe', 'w'],
-    ];
-
-    $process = proc_open($command, $descriptor, $pipes, $rootDir);
-    if (!is_resource($process)) {
-        $logs = 'proc_open вернул невалидный ресурс.';
-        $exitCode = 1;
-    } else {
-        fclose($pipes[0]);
-        $stdout = stream_get_contents($pipes[1]);
-        fclose($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[2]);
-        $exitCode = proc_close($process);
-        $logs = (string) $stdout . (string) $stderr;
-    }
-} else {
-    echo '<section><strong>Выполнение</strong><p class="warn">⚠️ <code>proc_open</code> недоступен, запускаю сборку через прямой include.</p></section>';
-
-    try {
-        putenv('MODX_BASE_PATH=' . $basePath);
-        $_ENV['MODX_BASE_PATH'] = $basePath;
-
-        ob_start();
-        require $transportScript;
+    ob_start();
+    require $transportScript;
+    $logs = (string) ob_get_clean();
+    $exitCode = 0;
+} catch (Throwable $e) {
+    if (ob_get_level() > 0) {
         $logs = (string) ob_get_clean();
-        $exitCode = 0;
-    } catch (Throwable $e) {
-        if (ob_get_level() > 0) {
-            $logs = (string) ob_get_clean();
-        }
-        $logs .= "\n" . get_class($e) . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString();
-        $exitCode = 1;
     }
+    $logs .= "\n" . get_class($e) . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString();
+    $exitCode = 1;
 }
 
 echo '<section>';
