@@ -19,6 +19,23 @@ $mysqlPassword = getenv('MYSQL_PASSWORD') ?: 'modx';
 $mysqlDatabase = getenv('MYSQL_DATABASE') ?: 'modx';
 $mysqlHost = getenv('MYSQL_HOST') ?: '127.0.0.1';
 
+function writeErr(string $message): void
+{
+    if (defined('STDERR')) {
+        fwrite(STDERR, $message);
+        return;
+    }
+
+    $stderr = @fopen('php://stderr', 'wb');
+    if (is_resource($stderr)) {
+        fwrite($stderr, $message);
+        fclose($stderr);
+        return;
+    }
+
+    echo $message;
+}
+
 function runCommand(string $command, string $workdir): void
 {
     echo "\n$command\n";
@@ -48,7 +65,7 @@ function runCommand(string $command, string $workdir): void
         echo $stdout;
     }
     if ($stderr !== false && $stderr !== '') {
-        fwrite(STDERR, $stderr);
+        writeErr($stderr);
     }
 
     if ($exitCode !== 0) {
@@ -121,7 +138,8 @@ $installCommand = sprintf(
 runCommand($installCommand, $modxDir);
 
 runCommand(
-    sprintf('MODX_BASE_PATH=%s %s %s',
+    sprintf(
+        'MODX_BASE_PATH=%s %s %s',
         escapeshellarg($modxDir),
         escapeshellarg(PHP_BINARY),
         escapeshellarg($rootDir . '/_build/build.transport.php')
