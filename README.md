@@ -53,6 +53,7 @@ MODX_BASE_PATH=/path/to/modx php _build/build.transport.php
 
 1. Распакуйте репозиторий в файловую систему сервера.
 2. Откройте в браузере: `https://ваш-сайт/_build/build.web.php`
+   - (совместимость) также можно открыть: `https://ваш-сайт/_build/build_web.php`
 3. Если MODX расположен в другой директории, передайте параметр:
    - `https://ваш-сайт/_build/build.web.php?modx_base_path=/полный/путь/к/modx/`
 4. Скрипт запустит `build.transport.php` отдельным PHP-процессом и покажет логи на странице.
