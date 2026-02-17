@@ -5,6 +5,7 @@ ExtraTextAreas.grid.Fields = function(config) {
         id: 'extratextareas-grid-fields',
         url: ExtraTextAreas.config.connectorUrl,
         baseParams: { action: 'mgr/field/getlist' },
+        save_action: 'mgr/field/update',
         fields: ['id', 'name', 'caption', 'description', 'active', 'rank'],
         paging: true,
         autosave: true,
@@ -16,6 +17,17 @@ ExtraTextAreas.grid.Fields = function(config) {
             { header: _('extratextareas.field_active'), dataIndex: 'active', editor: { xtype: 'combo-boolean' }, width: 80, renderer: Ext.util.Format.booleanRenderer },
             { header: _('extratextareas.field_rank'), dataIndex: 'rank', editor: { xtype: 'numberfield' }, width: 60 }
         ],
+        listeners: {
+            render: {
+                fn: function(grid) {
+                    grid.getStore().on('exception', function(proxy, type, action, options, response) {
+                        var body = response && response.responseText ? response.responseText : _('error');
+                        MODx.msg.alert(_('error'), body);
+                    });
+                },
+                scope: this
+            }
+        },
         tbar: [{
             text: _('extratextareas.field_create'),
             handler: this.createField,
