@@ -41,6 +41,55 @@ class ExtraTextAreasFieldUpdateProcessor extends modObjectUpdateProcessor
 
         return parent::beforeSet();
     }
+
+    protected function getSaveFailureMessage(): string
+    {
+        $error = $this->modx->errorInfo();
+        $message = $this->modx->lexicon('extratextareas.field_err_save');
+
+        if (is_array($error)) {
+            $sqlState = (string) ($error[0] ?? '');
+            $driverCode = (string) ($error[1] ?? '');
+            $driverMessage = trim((string) ($error[2] ?? ''));
+
+            if ($sqlState !== '' || $driverCode !== '' || $driverMessage !== '') {
+                $parts = array_filter([$sqlState, $driverCode, $driverMessage], static fn($v) => $v !== '');
+                $message .= ' [' . implode(' | ', $parts) . ']';
+            }
+
+            $this->modx->log(modX::LOG_LEVEL_ERROR, '[extratextareas] field save failed: ' . print_r($error, true));
+        }
+
+        return $message;
+    }
+
+    public function process()
+    {
+        $id = (int) $this->getProperty($this->primaryKeyField, 0);
+        if (empty($id)) {
+            return $this->failure($this->modx->lexicon($this->objectType . '_err_ns'));
+        }
+
+        $this->object = $this->modx->getObject($this->classKey, $id);
+        if (!$this->object) {
+            return $this->failure($this->modx->lexicon($this->objectType . '_err_nfs', [$id]));
+        }
+
+        $this->object->fromArray($this->getProperties());
+
+        $beforeSave = $this->beforeSave();
+        if ($beforeSave !== true) {
+            return $this->failure($beforeSave);
+        }
+
+        if (!$this->object->save()) {
+            return $this->failure($this->getSaveFailureMessage());
+        }
+
+        $this->afterSave();
+        return $this->cleanup();
+    }
+
 }
 
 return ExtraTextAreasFieldUpdateProcessor::class;
