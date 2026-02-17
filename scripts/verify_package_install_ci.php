@@ -53,6 +53,17 @@ if (!copy($packageFile, $targetPackage)) {
 
 echo "[verify] copied package to {$targetPackage}\n";
 
+$scanResponse = $modx->runProcessor('workspace/packages/scanlocal', [
+    'workspace' => 1,
+]);
+if (!$scanResponse || $scanResponse->isError()) {
+    $msg = $scanResponse ? ($scanResponse->getMessage() ?: 'scanlocal failed') : 'scanlocal returned empty response';
+    $payload = $scanResponse ? print_r($scanResponse->getResponse(), true) : '';
+    fail('Scan local packages failed: ' . $msg . "\n" . $payload);
+}
+
+echo "[verify] local package scan: OK\n";
+
 $response = $modx->runProcessor('workspace/packages/install', [
     'signature' => $signature,
 ]);

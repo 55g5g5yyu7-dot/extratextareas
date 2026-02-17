@@ -46,6 +46,7 @@ class ExtraTextAreasFieldUpdateProcessor extends modObjectUpdateProcessor
     {
         $error = $this->modx->errorInfo();
         $message = $this->modx->lexicon('extratextareas.field_err_save');
+        $details = [];
 
         if (is_array($error)) {
             $sqlState = (string) ($error[0] ?? '');
@@ -55,11 +56,30 @@ class ExtraTextAreasFieldUpdateProcessor extends modObjectUpdateProcessor
             $hasRealSqlError = !($sqlState === '00000' && $driverCode === '' && $driverMessage === '');
             if ($hasRealSqlError) {
                 $parts = array_filter([$sqlState, $driverCode, $driverMessage], static fn($v) => $v !== '');
-                $message .= ' [' . implode(' | ', $parts) . ']';
+                $details[] = implode(' | ', $parts);
             }
-
-            $this->modx->log(modX::LOG_LEVEL_ERROR, '[extratextareas] field save failed: ' . print_r($error, true));
         }
+
+        if ($this->object && method_exists($this->object, 'getErrors')) {
+            $objectErrors = (array) $this->object->getErrors();
+            if (!empty($objectErrors)) {
+                $details[] = 'validation: ' . json_encode($objectErrors, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            }
+        }
+
+        if (empty($details)) {
+            $details[] = 'no SQL details; check MODX error log';
+        }
+
+        $message .= ' [' . implode(' | ', $details) . ']';
+
+        $this->modx->log(modX::LOG_LEVEL_ERROR,
+            '[extratextareas] field update save failed: ' . print_r([
+                'errorInfo' => $error,
+                'properties' => $this->getProperties(),
+                'objectClass' => $this->object ? get_class($this->object) : null,
+            ], true)
+        );
 
         return $message;
     }
