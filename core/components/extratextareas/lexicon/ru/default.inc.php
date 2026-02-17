@@ -18,3 +18,6 @@ $_lang['extratextareas.editor_plain'] = 'Обычный textarea';
 $_lang['extratextareas.field_err_name_exists'] = 'Поле с таким системным именем уже существует';
 $_lang['extratextareas.field_err_name_format'] = 'Системное имя может содержать только латинские буквы, цифры и _';
 $_lang['extratextareas.field_err_save'] = 'Не удалось сохранить поле. Проверьте уникальность имени и правильность данных';
+
+$_lang['extratextareas.diagnostics_run'] = 'Покрытие тестами кода';
+$_lang['extratextareas.diagnostics_title'] = 'Диагностика ExtraTextAreas';

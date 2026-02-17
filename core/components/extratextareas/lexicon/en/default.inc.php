@@ -18,3 +18,6 @@ $_lang['extratextareas.editor_plain'] = 'Plain textarea';
 $_lang['extratextareas.field_err_name_exists'] = 'A field with this system name already exists';
 $_lang['extratextareas.field_err_name_format'] = 'System name may contain only latin letters, digits and _';
 $_lang['extratextareas.field_err_save'] = 'Could not save field. Check unique name and data validity';
+
+$_lang['extratextareas.diagnostics_run'] = 'Code test coverage';
+$_lang['extratextareas.diagnostics_title'] = 'ExtraTextAreas diagnostics';

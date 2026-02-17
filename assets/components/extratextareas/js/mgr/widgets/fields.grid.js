@@ -32,6 +32,10 @@ ExtraTextAreas.grid.Fields = function(config) {
             text: _('extratextareas.field_create'),
             handler: this.createField,
             scope: this
+        }, '-', {
+            text: _('extratextareas.diagnostics_run'),
+            handler: this.runDiagnostics,
+            scope: this
         }]
     });
 
@@ -55,6 +59,29 @@ Ext.extend(ExtraTextAreas.grid.Fields, MODx.grid.Grid, {
             listeners: { success: { fn: this.refresh, scope: this } }
         });
         w.show(e.target);
+    },
+
+    runDiagnostics: function() {
+        MODx.Ajax.request({
+            url: this.config.url,
+            params: { action: 'mgr/diagnostics/run' },
+            listeners: {
+                success: {
+                    fn: function(r) {
+                        var log = r && r.object && r.object.log ? r.object.log : _('error');
+                        MODx.msg.alert(_('extratextareas.diagnostics_title'), '<textarea readonly style=\"width:100%;min-height:320px;font-family:monospace\">' + Ext.util.Format.htmlEncode(log) + '</textarea>');
+                    },
+                    scope: this
+                },
+                failure: {
+                    fn: function(r) {
+                        var log = r && r.message ? r.message : _('error');
+                        MODx.msg.alert(_('extratextareas.diagnostics_title'), log);
+                    },
+                    scope: this
+                }
+            }
+        });
     },
 
     getMenu: function() {

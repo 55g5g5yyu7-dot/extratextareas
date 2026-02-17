@@ -49,7 +49,8 @@ class ExtraTextAreasFieldCreateProcessor extends modObjectCreateProcessor
             $driverCode = (string) ($error[1] ?? '');
             $driverMessage = trim((string) ($error[2] ?? ''));
 
-            if ($sqlState !== '' || $driverCode !== '' || $driverMessage !== '') {
+            $hasRealSqlError = !($sqlState === '00000' && $driverCode === '' && $driverMessage === '');
+            if ($hasRealSqlError) {
                 $parts = array_filter([$sqlState, $driverCode, $driverMessage], static fn($v) => $v !== '');
                 $message .= ' [' . implode(' | ', $parts) . ']';
             }
