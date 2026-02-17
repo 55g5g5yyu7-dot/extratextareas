@@ -9,40 +9,48 @@ ExtraTextAreas.panel.Home = function(config) {
             border: false,
             cls: 'modx-page-header'
         }, {
-            xtype: 'panel',
-            border: true,
-            cls: 'main-wrapper',
-            style: 'margin-bottom: 12px; padding: 10px;',
-            items: [{
-                html: '<strong>' + _('extratextareas.diagnostics_title') + '</strong><br/><small>Запуск быстрой проверки работоспособности компонента</small>',
-                border: false,
-                style: 'margin-bottom:8px;'
-            }, {
-                xtype: 'button',
-                text: _('extratextareas.diagnostics_run'),
-                handler: this.runDiagnostics,
-                scope: this
-            }, {
-                xtype: 'textarea',
-                id: 'extratextareas-diagnostics-log',
-                readOnly: true,
-                anchor: '100%',
-                height: 180,
-                style: 'margin-top: 8px; font-family: monospace;',
-                value: 'Нажмите кнопку «' + _('extratextareas.diagnostics_run') + '», чтобы получить отчёт.'
-            }]
+            xtype: 'box',
+            autoEl: {
+                tag: 'div',
+                html: '' +
+                    '<div class="panel panel-default" style="padding:10px;margin-bottom:12px;">' +
+                    '  <div style="margin-bottom:8px;"><strong>' + _('extratextareas.diagnostics_title') + '</strong></div>' +
+                    '  <div id="extratextareas-diagnostics-btn-wrap"></div>' +
+                    '  <textarea id="extratextareas-diagnostics-log" readonly style="width:100%;min-height:180px;margin-top:8px;font-family:monospace;">' +
+                    'Нажмите кнопку «' + _('extratextareas.diagnostics_run') + '», чтобы получить отчёт.' +
+                    '</textarea>' +
+                    '</div>'
+            }
         }, {
             xtype: 'extratextareas-grid-fields'
-        }]
+        }],
+        listeners: {
+            afterrender: {
+                fn: function() {
+                    var btnWrap = Ext.get('extratextareas-diagnostics-btn-wrap');
+                    if (!btnWrap) {
+                        return;
+                    }
+
+                    new Ext.Button({
+                        renderTo: btnWrap,
+                        text: _('extratextareas.diagnostics_run'),
+                        handler: this.runDiagnostics,
+                        scope: this
+                    });
+                },
+                scope: this
+            }
+        }
     });
     ExtraTextAreas.panel.Home.superclass.constructor.call(this, config);
 };
 
 Ext.extend(ExtraTextAreas.panel.Home, MODx.Panel, {
     runDiagnostics: function() {
-        var logField = Ext.getCmp('extratextareas-diagnostics-log');
-        if (logField) {
-            logField.setValue('Запускаю диагностику...');
+        var logEl = Ext.get('extratextareas-diagnostics-log');
+        if (logEl) {
+            logEl.dom.value = 'Запускаю диагностику...';
         }
 
         MODx.Ajax.request({
@@ -52,8 +60,8 @@ Ext.extend(ExtraTextAreas.panel.Home, MODx.Panel, {
                 success: {
                     fn: function(r) {
                         var log = r && r.object && r.object.log ? r.object.log : _('error');
-                        if (logField) {
-                            logField.setValue(log);
+                        if (logEl) {
+                            logEl.dom.value = log;
                         }
                     },
                     scope: this
@@ -61,8 +69,8 @@ Ext.extend(ExtraTextAreas.panel.Home, MODx.Panel, {
                 failure: {
                     fn: function(r) {
                         var log = r && r.message ? r.message : _('error');
-                        if (logField) {
-                            logField.setValue('❌ ' + log);
+                        if (logEl) {
+                            logEl.dom.value = '❌ ' + log;
                         }
                         MODx.msg.alert(_('extratextareas.diagnostics_title'), log);
                     },
