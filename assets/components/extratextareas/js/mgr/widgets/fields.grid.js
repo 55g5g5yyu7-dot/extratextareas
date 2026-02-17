@@ -5,6 +5,7 @@ ExtraTextAreas.grid.Fields = function(config) {
         id: 'extratextareas-grid-fields',
         url: ExtraTextAreas.config.connectorUrl,
         baseParams: { action: 'mgr/field/getlist' },
+        save_action: 'mgr/field/update',
         fields: ['id', 'name', 'caption', 'description', 'active', 'rank'],
         paging: true,
         autosave: true,
@@ -16,9 +17,24 @@ ExtraTextAreas.grid.Fields = function(config) {
             { header: _('extratextareas.field_active'), dataIndex: 'active', editor: { xtype: 'combo-boolean' }, width: 80, renderer: Ext.util.Format.booleanRenderer },
             { header: _('extratextareas.field_rank'), dataIndex: 'rank', editor: { xtype: 'numberfield' }, width: 60 }
         ],
+        listeners: {
+            render: {
+                fn: function(grid) {
+                    grid.getStore().on('exception', function(proxy, type, action, options, response) {
+                        var body = response && response.responseText ? response.responseText : _('error');
+                        MODx.msg.alert(_('error'), body);
+                    });
+                },
+                scope: this
+            }
+        },
         tbar: [{
             text: _('extratextareas.field_create'),
             handler: this.createField,
+            scope: this
+        }, '-', {
+            text: _('extratextareas.diagnostics_run'),
+            handler: this.runDiagnostics,
             scope: this
         }]
     });
@@ -43,6 +59,29 @@ Ext.extend(ExtraTextAreas.grid.Fields, MODx.grid.Grid, {
             listeners: { success: { fn: this.refresh, scope: this } }
         });
         w.show(e.target);
+    },
+
+    runDiagnostics: function() {
+        MODx.Ajax.request({
+            url: this.config.url,
+            params: { action: 'mgr/diagnostics/run' },
+            listeners: {
+                success: {
+                    fn: function(r) {
+                        var log = r && r.object && r.object.log ? r.object.log : _('error');
+                        MODx.msg.alert(_('extratextareas.diagnostics_title'), '<textarea readonly style=\"width:100%;min-height:320px;font-family:monospace\">' + Ext.util.Format.htmlEncode(log) + '</textarea>');
+                    },
+                    scope: this
+                },
+                failure: {
+                    fn: function(r) {
+                        var log = r && r.message ? r.message : _('error');
+                        MODx.msg.alert(_('extratextareas.diagnostics_title'), log);
+                    },
+                    scope: this
+                }
+            }
+        });
     },
 
     getMenu: function() {
