@@ -47,36 +47,48 @@ ExtraTextAreas.panel.Home = function(config) {
 };
 
 Ext.extend(ExtraTextAreas.panel.Home, MODx.Panel, {
-    runDiagnostics: function() {
+    writeDiagnosticsLog: function(text) {
         var logEl = Ext.get('extratextareas-diagnostics-log');
         if (logEl) {
-            logEl.dom.value = 'Запускаю диагностику...';
+            logEl.dom.value = text;
         }
+    },
+
+    runDiagnostics: function() {
+        this.writeDiagnosticsLog('Запускаю диагностику...');
 
         MODx.Ajax.request({
             url: ExtraTextAreas.config.connectorUrl,
             params: { action: 'mgr/diagnostics/run' },
-            listeners: {
-                success: {
-                    fn: function(r) {
-                        var log = r && r.object && r.object.log ? r.object.log : _('error');
-                        if (logEl) {
-                            logEl.dom.value = log;
-                        }
-                    },
-                    scope: this
-                },
-                failure: {
-                    fn: function(r) {
-                        var log = r && r.message ? r.message : _('error');
-                        if (logEl) {
-                            logEl.dom.value = '❌ ' + log;
-                        }
-                        MODx.msg.alert(_('extratextareas.diagnostics_title'), log);
-                    },
-                    scope: this
+            callback: function(options, success, response) {
+                var payload = null;
+                var log = '';
+
+                try {
+                    payload = response && response.responseText
+                        ? Ext.decode(response.responseText)
+                        : null;
+                } catch (e) {
+                    payload = null;
                 }
-            }
+
+                if (payload && payload.object && payload.object.log) {
+                    log = payload.object.log;
+                } else if (payload && payload.message) {
+                    log = '❌ ' + payload.message;
+                } else if (response && response.responseText) {
+                    log = '❌ HTTP ' + response.status + "\n" + response.responseText;
+                } else {
+                    log = '❌ Не удалось получить ответ от connector.php';
+                }
+
+                this.writeDiagnosticsLog(log);
+
+                if (!success) {
+                    MODx.msg.alert(_('extratextareas.diagnostics_title'), log);
+                }
+            },
+            scope: this
         });
     }
 });
