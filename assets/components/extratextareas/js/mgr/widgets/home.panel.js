@@ -54,41 +54,44 @@ Ext.extend(ExtraTextAreas.panel.Home, MODx.Panel, {
         }
     },
 
+    parseDiagnosticsResponse: function(r) {
+        if (r && r.object && r.object.log) {
+            return r.object.log;
+        }
+
+        if (r && r.message) {
+            return '❌ ' + r.message;
+        }
+
+        if (r && r.responseText) {
+            return '❌ HTTP response:\n' + r.responseText;
+        }
+
+        return '❌ Не удалось получить ответ от connector.php';
+    },
+
     runDiagnostics: function() {
         this.writeDiagnosticsLog('Запускаю диагностику...');
 
         MODx.Ajax.request({
             url: ExtraTextAreas.config.connectorUrl,
             params: { action: 'mgr/diagnostics/run' },
-            callback: function(options, success, response) {
-                var payload = null;
-                var log = '';
-
-                try {
-                    payload = response && response.responseText
-                        ? Ext.decode(response.responseText)
-                        : null;
-                } catch (e) {
-                    payload = null;
+            listeners: {
+                success: {
+                    fn: function(r) {
+                        this.writeDiagnosticsLog(this.parseDiagnosticsResponse(r));
+                    },
+                    scope: this
+                },
+                failure: {
+                    fn: function(r) {
+                        var log = this.parseDiagnosticsResponse(r);
+                        this.writeDiagnosticsLog(log);
+                        MODx.msg.alert(_('extratextareas.diagnostics_title'), log);
+                    },
+                    scope: this
                 }
-
-                if (payload && payload.object && payload.object.log) {
-                    log = payload.object.log;
-                } else if (payload && payload.message) {
-                    log = '❌ ' + payload.message;
-                } else if (response && response.responseText) {
-                    log = '❌ HTTP ' + response.status + "\n" + response.responseText;
-                } else {
-                    log = '❌ Не удалось получить ответ от connector.php';
-                }
-
-                this.writeDiagnosticsLog(log);
-
-                if (!success) {
-                    MODx.msg.alert(_('extratextareas.diagnostics_title'), log);
-                }
-            },
-            scope: this
+            }
         });
     }
 });

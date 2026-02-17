@@ -2,6 +2,18 @@
 
 class ExtraTextAreasDiagnosticsRunProcessor extends modProcessor
 {
+    protected function tableExists(string $tableName): bool
+    {
+        $sql = 'SHOW TABLES LIKE ' . $this->modx->quote($tableName);
+        $stmt = $this->modx->query($sql);
+
+        if (!$stmt) {
+            return false;
+        }
+
+        return (bool) $stmt->fetchColumn();
+    }
+
     public function process()
     {
         $corePath = $this->modx->getOption('extratextareas.core_path', null, $this->modx->getOption('core_path') . 'components/extratextareas/');
@@ -41,9 +53,8 @@ class ExtraTextAreasDiagnosticsRunProcessor extends modProcessor
         $fieldTable = $prefix . 'extratextareas_fields';
         $valueTable = $prefix . 'extratextareas_values';
 
-        $manager = $this->modx->getManager();
-        $fieldTableExists = $manager->tableExists($fieldTable);
-        $valueTableExists = $manager->tableExists($valueTable);
+        $fieldTableExists = $this->tableExists($fieldTable);
+        $valueTableExists = $this->tableExists($valueTable);
         $add($log, 'Table exists: ' . $fieldTable, $fieldTableExists);
         $add($log, 'Table exists: ' . $valueTable, $valueTableExists);
         if (!$fieldTableExists || !$valueTableExists) {
