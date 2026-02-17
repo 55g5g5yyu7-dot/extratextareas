@@ -41,11 +41,12 @@ class ExtraTextAreasDiagnosticsRunProcessor extends modProcessor
             $ok = false;
         }
 
-        $modelPath = $corePath . 'model/';
-        $fieldClassLoaded = (bool) $this->modx->loadClass('ExtraTextAreasField', $modelPath, true, true);
-        $valueClassLoaded = (bool) $this->modx->loadClass('ExtraTextAreasValue', $modelPath, true, true);
-        $add($log, 'Class ExtraTextAreasField available', $fieldClassLoaded);
-        $add($log, 'Class ExtraTextAreasValue available', $valueClassLoaded);
+        $fieldModelFile = $corePath . 'model/extratextareas/extratextareasfield.class.php';
+        $valueModelFile = $corePath . 'model/extratextareas/extratextareasvalue.class.php';
+        $fieldClassLoaded = is_file($fieldModelFile);
+        $valueClassLoaded = is_file($valueModelFile);
+        $add($log, 'Class ExtraTextAreasField available', $fieldClassLoaded, $fieldModelFile);
+        $add($log, 'Class ExtraTextAreasValue available', $valueClassLoaded, $valueModelFile);
 
         $fieldObjectOk = $this->modx->newObject('ExtraTextAreasField') !== null;
         $valueObjectOk = $this->modx->newObject('ExtraTextAreasValue') !== null;
