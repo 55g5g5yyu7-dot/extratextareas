@@ -110,6 +110,21 @@ $corePath = (string) $modx->getOption('extratextareas.core_path', null, $modx->g
 require_once $corePath . 'src/ExtraTextAreas.php';
 new ExtraTextAreas($modx);
 
+// Some MODX/xPDO combinations do not autoload non-namespaced _mysql model derivatives reliably.
+// Explicit includes prevent fatal errors like "Class \ExtraTextAreasField_mysql not found" during newObject().
+if (is_file($corePath . 'model/extratextareas/extratextareasfield.class.php')) {
+    require_once $corePath . 'model/extratextareas/extratextareasfield.class.php';
+}
+if (is_file($corePath . 'model/extratextareas/extratextareasvalue.class.php')) {
+    require_once $corePath . 'model/extratextareas/extratextareasvalue.class.php';
+}
+if (is_file($corePath . 'model/extratextareas/mysql/extratextareasfield.class.php')) {
+    require_once $corePath . 'model/extratextareas/mysql/extratextareasfield.class.php';
+}
+if (is_file($corePath . 'model/extratextareas/mysql/extratextareasvalue.class.php')) {
+    require_once $corePath . 'model/extratextareas/mysql/extratextareasvalue.class.php';
+}
+
 $checks = [];
 
 $checks[] = ['package loaded', (bool) $modx->addPackage('extratextareas', $corePath . 'model/')];
