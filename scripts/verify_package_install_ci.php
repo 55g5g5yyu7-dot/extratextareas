@@ -141,25 +141,51 @@ foreach (['extratextareas_fields', 'extratextareas_values'] as $table) {
     $checks[] = ["table exists {$tableName}", (bool) $ok];
 }
 
-$field = $modx->newObject('ExtraTextAreasField');
-if (!$field) {
-    fail('Cannot instantiate ExtraTextAreasField for CRUD test.');
-}
-
-$testName = 'ci_test_' . time();
-$field->fromArray([
+$testName = str_replace('.', '_', uniqid('ci_test_', true));
+$createResponse = $modx->runProcessor('mgr/field/create', [
     'name' => $testName,
     'caption' => 'CI test field',
     'description' => 'Created by CI verification',
     'active' => 1,
     'rank' => 999,
+], [
+    'processors_path' => $corePath . 'processors/',
 ]);
-$saveOk = $field->save();
-$checks[] = ['create field record', (bool) $saveOk];
 
-if ($saveOk) {
-    $removeOk = $field->remove();
-    $checks[] = ['remove field record', (bool) $removeOk];
+$createOk = $createResponse && !$createResponse->isError();
+$checks[] = ['create field record', $createOk];
+
+$createdId = 0;
+if ($createResponse) {
+    $createPayload = $createResponse->getResponse();
+    if (is_array($createPayload) && isset($createPayload['object']['id'])) {
+        $createdId = (int) $createPayload['object']['id'];
+    }
+}
+
+if (!$createOk) {
+    $message = $createResponse ? ($createResponse->getMessage() ?: 'unknown create error') : 'empty processor response';
+    $payload = $createResponse ? print_r($createResponse->getResponse(), true) : '';
+    echo "[verify] create field failure details: {$message}\n{$payload}";
+}
+
+if ($createOk && $createdId > 0) {
+    $removeResponse = $modx->runProcessor('mgr/field/remove', [
+        'id' => $createdId,
+    ], [
+        'processors_path' => $corePath . 'processors/',
+    ]);
+    $removeOk = $removeResponse && !$removeResponse->isError();
+    $checks[] = ['remove field record', $removeOk];
+
+    if (!$removeOk) {
+        $message = $removeResponse ? ($removeResponse->getMessage() ?: 'unknown remove error') : 'empty processor response';
+        $payload = $removeResponse ? print_r($removeResponse->getResponse(), true) : '';
+        echo "[verify] remove field failure details: {$message}\n{$payload}";
+    }
+} elseif ($createOk) {
+    $checks[] = ['remove field record', false];
+    echo "[verify] remove field failure details: create succeeded but returned no id\n";
 }
 
 $failed = false;
