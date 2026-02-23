@@ -8,6 +8,28 @@ function fail(string $message, int $code = 1): void
     exit($code);
 }
 
+/**
+ * @return array{0:?modProcessorResponse,1:string,2:array<int,string>}
+ */
+function runProcessorWithFallback(modX $modx, array $actions, array $properties = []): array
+{
+    $attempts = [];
+
+    foreach ($actions as $action) {
+        $response = $modx->runProcessor($action, $properties);
+        $attempts[] = $action;
+        if ($response && !$response->isError()) {
+            return [$response, $action, $attempts];
+        }
+
+        if ($response && stripos((string) $response->getMessage(), 'Requested processor not found') === false) {
+            return [$response, $action, $attempts];
+        }
+    }
+
+    return [null, '', $attempts];
+}
+
 $root = realpath(__DIR__ . '/..');
 if (!$root) {
     fail('Unable to resolve project root.');
@@ -53,16 +75,20 @@ if (!copy($packageFile, $targetPackage)) {
 
 echo "[verify] copied package to {$targetPackage}\n";
 
-$scanResponse = $modx->runProcessor('workspace/packages/scanlocal', [
+[$scanResponse, $scanAction, $scanAttempts] = runProcessorWithFallback($modx, [
+    'workspace/packages/scanlocal',
+    'workspace/packages/scan/local',
+    'MODX\\Revolution\\Processors\\Workspace\\Packages\\ScanLocal',
+], [
     'workspace' => 1,
 ]);
 if (!$scanResponse || $scanResponse->isError()) {
     $msg = $scanResponse ? ($scanResponse->getMessage() ?: 'scanlocal failed') : 'scanlocal returned empty response';
     $payload = $scanResponse ? print_r($scanResponse->getResponse(), true) : '';
-    fail('Scan local packages failed: ' . $msg . "\n" . $payload);
+    fail('Scan local packages failed: ' . $msg . "\nTried actions: " . implode(', ', $scanAttempts) . "\n" . $payload);
 }
 
-echo "[verify] local package scan: OK\n";
+echo "[verify] local package scan: OK ({$scanAction})\n";
 
 $response = $modx->runProcessor('workspace/packages/install', [
     'signature' => $signature,
