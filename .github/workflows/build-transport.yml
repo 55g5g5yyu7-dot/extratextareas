@@ -46,6 +46,11 @@ jobs:
           MYSQL_DATABASE: modx
         run: ./scripts/build_transport_ci.sh
 
+      - name: Verify package install + CRUD smoke tests
+        env:
+          MODX_BASE_PATH: ${{ github.workspace }}/.modx-runtime/modx
+        run: php ./scripts/verify_package_install_ci.php
+
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
