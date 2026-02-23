@@ -28,6 +28,14 @@ class ExtraTextAreas
 
         $this->modx->addPackage('extratextareas', $this->config['modelPath']);
         $this->modx->lexicon->load('extratextareas:default');
+        
+        // Подключаем классы, чтобы они были доступны для использования
+        if (!class_exists('ExtraTextAreasField')) {
+            require_once $corePath . 'model/extratextareas/extratextareasfield.class.php';
+        }
+        if (!class_exists('ExtraTextAreasValue')) {
+            require_once $corePath . 'model/extratextareas/extratextareasvalue.class.php';
+        }
     }
 
     public function getConfig(): array
