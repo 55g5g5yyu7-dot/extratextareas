@@ -1,6 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+MYSQL_HOST="${MYSQL_HOST:-127.0.0.1}"
+MYSQL_USER="${MYSQL_USER:-modx}"
+MYSQL_PASSWORD="${MYSQL_PASSWORD:-modx}"
+MYSQL_DATABASE="${MYSQL_DATABASE:-modx}"
+
+if ! command -v mysql >/dev/null 2>&1; then
+  echo "[build_transport_ci] mysql client is required but not found in PATH" >&2
+  exit 1
+fi
+
+if ! command -v composer >/dev/null 2>&1; then
+  echo "[build_transport_ci] composer is required but not found in PATH" >&2
+  exit 1
+fi
+
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 RUNTIME_DIR="${ROOT_DIR}/.modx-runtime"
 DIST_DIR="${ROOT_DIR}/dist"
@@ -13,11 +28,11 @@ pushd "${RUNTIME_DIR}" >/dev/null
 composer create-project modx/revolution modx --no-interaction --quiet
 cd modx
 
-mysql -h 127.0.0.1 -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -h "${MYSQL_HOST}" -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 php setup/cli-install.php \
   --mode=new \
-  --database_server=127.0.0.1 \
+  --database_server="${MYSQL_HOST}" \
   --database="${MYSQL_DATABASE}" \
   --database_user="${MYSQL_USER}" \
   --database_password="${MYSQL_PASSWORD}" \
