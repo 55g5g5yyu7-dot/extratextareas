@@ -1,5 +1,7 @@
 <?php
 
+require_once dirname(__DIR__) . '/index.class.php';
+
 class ExtraTextAreasHomeManagerController extends ExtraTextAreasManagerController
 {
     public function getPageTitle()
